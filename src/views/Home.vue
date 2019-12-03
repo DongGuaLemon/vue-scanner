@@ -1,53 +1,58 @@
 <template>
-  <div class="home">
-    <qrcode-stream @init="onInit" @decode="onDecode" :camera="cameraSettings" :track="false" :paused="paused"></qrcode-stream>
+  <div>
+    <p class="error">{{ error }}</p>
+
+    <p class="decode-result">Last result: <b>{{ result }}</b></p>
+
+    <qrcode-stream @decode="onDecode" @init="onInit" />
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
+import { QrcodeStream } from 'vue-qrcode-reader'
+
 export default {
-  name: "home",
-  data() {
+
+  components: { QrcodeStream },
+
+  data () {
     return {
-      cameraSettings: {
-        audio: false,
-        video: {
-          facingMode: { ideal: "environment" }
-        }
-      },
-      paused: false
-    };
+      result: '',
+      error: ''
+    }
   },
+
   methods: {
-    onDecode(decodedString) {
-      alert(decodedString)
+    onDecode (result) {
+      this.result = result
     },
+
     async onInit (promise) {
-    // show loading indicator
-
-    try {
-      await promise
-
-      // successfully initialized
-    } catch (error) {
-      if (error.name === 'NotAllowedError') {
-        // user denied camera access permisson
-      } else if (error.name === 'NotFoundError') {
-        // no suitable camera device installed
-      } else if (error.name === 'NotSupportedError') {
-        // page is not served over HTTPS (or localhost)
-      } else if (error.name === 'NotReadableError') {
-        // maybe camera is already in use
-      } else if (error.name === 'OverconstrainedError') {
-        // did you requested the front camera although there is none?
-      } else if (error.name === 'StreamApiNotSupportedError') {
-        // browser seems to be lacking features
+      try {
+        await promise
+      } catch (error) {
+        if (error.name === 'NotAllowedError') {
+          this.error = "ERROR: you need to grant camera access permisson"
+        } else if (error.name === 'NotFoundError') {
+          this.error = "ERROR: no camera on this device"
+        } else if (error.name === 'NotSupportedError') {
+          this.error = "ERROR: secure context required (HTTPS, localhost)"
+        } else if (error.name === 'NotReadableError') {
+          this.error = "ERROR: is the camera already in use?"
+        } else if (error.name === 'OverconstrainedError') {
+          this.error = "ERROR: installed cameras are not suitable"
+        } else if (error.name === 'StreamApiNotSupportedError') {
+          this.error = "ERROR: Stream API is not supported in this browser"
+        }
       }
-    } finally {
-      // hide loading indicator
     }
   }
-  }
-};
+}
 </script>
+
+<style scoped>
+.error {
+  font-weight: bold;
+  color: red;
+}
+</style>
